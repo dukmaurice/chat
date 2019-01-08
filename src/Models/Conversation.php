@@ -196,6 +196,9 @@ class Conversation extends BaseModel
         return $this->withCount(['users' => function ($query) use ($users) {
             $query->whereIn('id', $users);
         }])->get()->filter(function ($conversation, $key) use ($users) {
+            if (!$users instanceof Countable) {
+                return $conversation->users_count == 1;
+            }
             return $conversation->users_count == count($users);
         });
     }
