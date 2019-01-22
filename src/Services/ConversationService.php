@@ -43,6 +43,11 @@ class ConversationService
         return $this->conversation->getMessages($this->user, $this->getPaginationParams(), $this->deleted);
     }
 
+    public function getMessagesWithoutPagination()
+    {
+        return $this->conversation->getMessagesWithoutPagination($this->user, $this->getPaginationParams(), $this->deleted);
+    }
+
     /**
      * Clears conversation.
      */
