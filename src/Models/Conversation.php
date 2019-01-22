@@ -265,7 +265,7 @@ class Conversation extends BaseModel
         return $messages;
     }
 
-    private function getConversationMessages($user, $paginationParams, $deleted)
+    private function getConversationMessagesWithoutPagination($user, $paginationParams, $deleted)
     {
         $messages = $this->messages()
             ->join('mc_message_notification', 'mc_message_notification.message_id', '=', 'mc_messages.id')
