@@ -52,9 +52,9 @@ class Conversation extends BaseModel
      *
      * @return Message
      */
-    public function getMessages($user, $paginationParams, $deleted = false, $paginate = true)
+    public function getMessages($user, $paginate = true, $paginationParams, $deleted = false)
     {
-        return $this->getConversationMessages($user, $paginationParams, $deleted, $paginate);
+        return $this->getConversationMessages($user, $paginate, $paginationParams, $deleted);
     }
 
     /**
@@ -237,7 +237,7 @@ class Conversation extends BaseModel
         return $this->getNotifications($user, true);
     }
 
-    private function getConversationMessages($user, $paginationParams, $deleted, $paginate = true)
+    private function getConversationMessages($user, $paginate = true, $paginationParams, $deleted)
     {
         $messages = $this->messages()
             ->join('mc_message_notification', 'mc_message_notification.message_id', '=', 'mc_messages.id')
