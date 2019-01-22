@@ -52,9 +52,9 @@ class Conversation extends BaseModel
      *
      * @return Message
      */
-    public function getMessages($user, $paginationParams, $deleted = false)
+    public function getMessages($user, $paginationParams, $deleted = false, $paginate = true)
     {
-        return $this->getConversationMessages($user, $paginationParams, $deleted);
+        return $this->getConversationMessages($user, $paginationParams, $deleted, $paginate);
     }
 
     /**
@@ -237,14 +237,15 @@ class Conversation extends BaseModel
         return $this->getNotifications($user, true);
     }
 
-    private function getConversationMessages($user, $paginationParams, $deleted)
+    private function getConversationMessages($user, $paginationParams, $deleted, $paginate = true)
     {
         $messages = $this->messages()
             ->join('mc_message_notification', 'mc_message_notification.message_id', '=', 'mc_messages.id')
             ->where('mc_message_notification.user_id', $user->id);
         $messages = $deleted ? $messages->whereNotNull('mc_message_notification.deleted_at') : $messages->whereNull('mc_message_notification.deleted_at');
-        $messages = $messages->orderBy('mc_messages.id', $paginationParams['sorting'])
-            ->paginate(
+        $messages = $messages->orderBy('mc_messages.id', $paginationParams['sorting']);
+        if ($paginate) {
+            $messages = $messages->paginate(
                 $paginationParams['perPage'],
                 [
                     'mc_message_notification.updated_at as read_at',
@@ -256,6 +257,7 @@ class Conversation extends BaseModel
                 $paginationParams['pageName'],
                 $paginationParams['page']
             );
+        }
 
         return $messages;
     }
