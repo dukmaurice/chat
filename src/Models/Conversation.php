@@ -245,7 +245,7 @@ class Conversation extends BaseModel
         $messages = $deleted ? $messages->whereNotNull('mc_message_notification.deleted_at') : $messages->whereNull('mc_message_notification.deleted_at');
         $messages = $messages->orderBy('mc_messages.id', $paginationParams['sorting']);
         if ($paginate) {
-            $messages = $messages->paginate(
+            return $messages->paginate(
                 $paginationParams['perPage'],
                 [
                     'mc_message_notification.updated_at as read_at',
@@ -259,7 +259,7 @@ class Conversation extends BaseModel
             );
         }
 
-        return $messages;
+        return $messages->get();
     }
 
     private function getConversationsList($user, $perPage, $page, $pageName)
