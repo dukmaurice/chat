@@ -272,7 +272,14 @@ class Conversation extends BaseModel
             ->where('mc_message_notification.user_id', $user->id);
         $messages = $deleted ? $messages->whereNotNull('mc_message_notification.deleted_at') : $messages->whereNull('mc_message_notification.deleted_at');
         $messages = $messages->orderBy('mc_messages.id', $paginationParams['sorting'])
-            ->get();
+        ->select(
+            'mc_message_notification.updated_at as read_at',
+            'mc_message_notification.deleted_at as deleted_at',
+            'mc_message_notification.user_id',
+            'mc_message_notification.id as notification_id',
+            'mc_messages.*'
+        )
+        ->get();
 
         return $messages;
     }
