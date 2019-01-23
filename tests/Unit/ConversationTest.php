@@ -182,4 +182,125 @@ class ConversationTest extends TestCase
 
         $this->assertEquals($message7->id, $conversation2->last_message->id);
     }
+
+    /** @test */
+    public function it_returns_last_message_as_null_when_the_very_last_message_was_deleted()
+    {
+        $conversation = Chat::createConversation([$this->users[0]->id, $this->users[1]->id]);
+        $message = Chat::message('Hello & Bye')->from($this->users[0])->to($conversation)->send();
+        Chat::message($message)->for($this->users[0])->delete();
+
+        $conversations = Chat::conversations()->for($this->users[0])->get();
+
+        $this->assertNull($conversations->get(0)->last_message);
+    }
+
+    /** @test */
+    public function it_returns_correct_attributes_in_last_message()
+    {
+        $conversation = Chat::createConversation([$this->users[0]->id, $this->users[1]->id]);
+        Chat::message('Hello')->from($this->users[0])->to($conversation)->send();
+
+        $conversations = Chat::conversations()->for($this->users[0])->get();
+
+        $this->assertTrue((bool) $conversations->get(0)->last_message->is_seen);
+
+        $conversations = Chat::conversations()->for($this->users[1])->get();
+
+        $this->assertFalse((bool) $conversations->get(0)->last_message->is_seen);
+    }
+
+    /** @test */
+    public function it_returns_the_correct_order_of_conversations_when_updated_at_is_duplicated()
+    {
+        $auth = $this->users[0];
+
+        $conversation = Chat::createConversation([$auth->id, $this->users[1]->id]);
+        Chat::message('Hello-'.$conversation->id)->from($auth)->to($conversation)->send();
+
+        $conversation = Chat::createConversation([$auth->id, $this->users[2]->id]);
+        Chat::message('Hello-'.$conversation->id)->from($auth)->to($conversation)->send();
+
+        $conversation = Chat::createConversation([$auth->id, $this->users[3]->id]);
+        Chat::message('Hello-'.$conversation->id)->from($auth)->to($conversation)->send();
+
+
+        $conversations = Chat::conversations()->setPaginationParams(['sorting' => 'desc'])->for($auth)->limit(1)->page(1)->get();
+        $this->assertEquals('Hello-3', $conversations->items()[0]->last_message->body);
+
+        $conversations = Chat::conversations()->setPaginationParams(['sorting' => 'desc'])->for($auth)->limit(1)->page(2)->get();
+        $this->assertEquals('Hello-2', $conversations->items()[0]->last_message->body);
+
+        $conversations = Chat::conversations()->setPaginationParams(['sorting' => 'desc'])->for($auth)->limit(1)->page(3)->get();
+        $this->assertEquals('Hello-1', $conversations->items()[0]->last_message->body);
+ 
+    }
+
+    /** @test */
+    public function it_allows_setting_private_or_public_conversation()
+    {
+        $conversation = Chat::createConversation([
+          $this->users[0]->id,
+          $this->users[1]->id,
+        ])
+        ->makePrivate();
+
+        $this->assertTrue($conversation->private);
+
+        $conversation->makePrivate(false);
+
+        $this->assertFalse($conversation->private);
+    }
+
+    /** @test */
+    public function it_converts_at_least_3_participants_to_public_by_default()
+    {
+        $conversation = Chat::createConversation([
+          $this->users[0]->id,
+          $this->users[1]->id,
+        ])
+        ->makePrivate();
+
+        $this->assertTrue($conversation->private);
+
+        $conversation = Chat::conversation($conversation)->addParticipants($this->createUsers(1));
+
+        $this->assertFalse($conversation->private);
+    }
+
+    /** @test */
+    public function converting_at_least_three_participants_to_public_is_configurable()
+    {
+        $this->app['config']->set('musonza_chat.make_three_or_more_users_public', false);
+
+        $conversation = Chat::createConversation([
+          $this->users[0]->id,
+          $this->users[1]->id,
+        ])
+        ->makePrivate();
+
+        $this->assertTrue($conversation->private);
+
+        $conversation = Chat::conversation($conversation)->addParticipants($this->createUsers(1));
+
+        $this->assertTrue($conversation->private);
+    }
+
+    /** @test */
+    public function it_filters_conversations_by_type()
+    {
+        Chat::createConversation([$this->users[0]->id, $this->users[1]->id])->makePrivate();
+        Chat::createConversation([$this->users[0]->id, $this->users[1]->id])->makePrivate(false);
+        Chat::createConversation([$this->users[0]->id, $this->users[1]->id])->makePrivate();
+
+        $allConversations = Chat::conversations()->for($this->users[0])->get();
+        $this->assertCount(3, $allConversations);
+
+        $privateConversations = Chat::conversations()->for($this->users[0])->isPrivate()->get();
+        $this->assertCount(2, $privateConversations);
+
+        $publicConversations = Chat::conversations()->for($this->users[0])->isPrivate(false)->get();
+        $this->assertCount(1, $publicConversations);
+    }
+
 }
