@@ -56,12 +56,14 @@ class CreateChatTables extends Migration
 
         Schema::create('mc_message_notification', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('code')->index();
             $table->integer('message_id')->unsigned();
             $table->integer('conversation_id')->unsigned();
             $table->integer('user_id')->unsigned();
             $table->boolean('is_seen')->default(false);
             $table->boolean('is_sender')->default(false);
             $table->boolean('flagged')->default(false);
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
